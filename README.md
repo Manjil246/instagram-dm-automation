@@ -214,3 +214,203 @@ getUsers();
 ### **Conclusion**
 
 You have successfully set up **Prisma with PostgreSQL using Neon**. This setup allows you to interact with your database efficiently with **type safety, migrations, and a visual database viewer**.
+
+
+
+
+Here's a detailed breakdown of how everything works internally, so you won't need to look elsewhere.
+
+---
+
+# **React Query & Optimistic UI: Complete Internal Working**
+
+## **1. Introduction**
+### **What is React Query?**
+React Query is a data-fetching and state management library for React applications. It handles:
+- **Caching:** Stores API responses in memory.
+- **Data Synchronization:** Keeps UI updated with the latest server data.
+- **Background Fetching:** Fetches fresh data while using cached data instantly.
+
+### **What is Optimistic UI?**
+Optimistic UI updates the UI **before** the server confirms the request. This makes the application feel faster because:
+- The user **sees changes instantly** instead of waiting for a response.
+- If the request **fails**, the UI is **reverted back** to the previous state.
+
+---
+
+## **2. Setting Up React Query**
+### **Installing React Query**
+Run the following command:
+```sh
+npm i @tanstack/react-query
+```
+
+### **Setting Up the Query Provider**
+Before using React Query, we need to **wrap the entire app** with the `QueryClientProvider`.
+
+#### **Code: `ReactQueryProvider.tsx`**
+```tsx
+"use client";
+
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React from "react";
+
+type Props = {
+  children: React.ReactNode;
+};
+
+const client = new QueryClient();
+
+const ReactQueryProvider = ({ children }: Props) => {
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+};
+
+export default ReactQueryProvider;
+```
+
+### **How It Works Internally:**
+1. `QueryClient` is created to **store cached API responses**.
+2. `QueryClientProvider` provides access to the cache.
+3. **Any component inside this provider** can now use React Query hooks.
+
+---
+
+## **3. Fetching Data Using React Query**
+### **Query Hook: Fetch Automations**
+```tsx
+import { getAllAutomations } from "@/actions/automations";
+import { useQuery } from "@tanstack/react-query";
+
+export const useQueryAutomations = () => {
+  return useQuery({
+    queryKey: ["user-automations"],
+    queryFn: getAllAutomations,
+  });
+};
+```
+
+### **How It Works Internally:**
+1. **When a component uses this hook**:
+   - It checks the cache for `["user-automations"]`.
+   - If found, it **immediately** returns cached data.
+   - If **not found**, it calls `getAllAutomations()`.
+
+2. **What happens if data changes?**
+   - React Query **re-fetches** the latest data in the background.
+   - The UI updates automatically.
+
+---
+
+## **4. Implementing Optimistic UI in Mutations**
+### **Mutation Hook: Create Automation**
+```tsx
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+
+export const useMutationData = (mutationKey, mutationFn, queryKey) => {
+  const client = useQueryClient();
+  
+  const { mutate, isPending } = useMutation({
+    mutationKey,
+    mutationFn,
+    onMutate: async (newData) => {
+      await client.cancelQueries({ queryKey: [queryKey] });
+      
+      const previousData = client.getQueryData([queryKey]);
+      
+      client.setQueryData([queryKey], (old) => [newData, ...old]);
+
+      return { previousData };
+    },
+    onError: (err, newData, context) => {
+      client.setQueryData([queryKey], context.previousData);
+    },
+    onSettled: () => {
+      client.invalidateQueries({ queryKey: [queryKey] });
+    },
+  });
+
+  return { mutate, isPending };
+};
+```
+
+---
+
+### **Step-by-Step Internal Working**
+1. **Before the mutation (`onMutate`):**
+   - **Cancel pending queries** for `"user-automations"` (to prevent race conditions).
+   - **Get the existing cache** (`previousData`).
+   - **Update the UI instantly** using `setQueryData()`.
+
+2. **When the request is sent:**
+   - The UI already **shows the new automation**.
+   - The user **doesn’t need to wait** for a server response.
+
+3. **If the request succeeds:**
+   - Everything stays the same.
+
+4. **If the request fails (`onError`):**
+   - The UI **reverts** to the previous state (`previousData`).
+
+5. **When the request is settled (`onSettled`):**
+   - The query cache is invalidated, and **fresh data is fetched**.
+
+---
+
+## **5. Using Optimistic UI in a Component**
+```tsx
+const { data } = useQueryAutomations();
+const { latestVariable } = useMutationDataState(["create-automation"]);
+
+const optimisticUIData = useMemo(() => {
+  if (latestVariable?.variables) {
+    return [latestVariable.variables, ...data.data];
+  }
+  return data.data;
+}, [latestVariable, data]);
+```
+
+### **How It Works Internally:**
+1. `latestVariable.variables` holds **the new automation** **before** the server response.
+2. The UI **renders it instantly** by combining:
+   - The **optimistic update**.
+   - The **fetched data** from `useQueryAutomations()`.
+
+---
+
+## **6. Flow Diagram**
+```plaintext
+User Action (Create Automation)
+        |
+        v
+Update UI Instantly (Optimistic UI)
+        |
+        v
+Send Request to Server (Mutation)
+        |
+   ---------------------
+   |                   |
+Success            Failure
+   |                   |
+No Change       Revert to Old Data
+```
+
+---
+
+## **7. Summary of Internal Workings**
+| Feature                | Internal Process |
+|------------------------|-----------------|
+| **Fetching Data**      | React Query first checks cache, then fetches if needed. |
+| **Mutations (Updating Data)** | Uses optimistic UI: updates UI before the server confirms. |
+| **Error Handling**     | If an error occurs, UI reverts to the previous state. |
+| **Automatic Refetch**  | Once the mutation is completed, the latest data is fetched. |
+
+---
+
+## **8. Why Use This Approach?**
+✅ **Instant UI Updates** → Feels more responsive  
+✅ **Less Waiting for Users** → No delay after clicking buttons  
+✅ **Automatic Cache Updates** → Data is always fresh  
+✅ **Built-in Error Handling** → Prevents incorrect UI states  
+
+This guide ensures **you fully understand how everything works** internally. 🚀 Let me know if you need any further explanations!
