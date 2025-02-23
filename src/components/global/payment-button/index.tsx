@@ -8,7 +8,6 @@ import React from "react";
 type Props = {};
 
 const PaymentButton = (props: Props) => {
-  // WIP: Loading state
   const { isProcessing, onSubscribe } = useSubscription();
   return (
     <Button

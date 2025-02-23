@@ -43,24 +43,18 @@ export const updateSubscription = async (
   clerkId: string,
   props: { customerId?: string; plan?: "PRO" | "FREE" }
 ) => {
-  // return await client.user.update({
-  //   where: {
-  //     clerkId,
-  //   },
-  //   data: {
-  //     subscription: {
-  //       update: {
-  //         data: {
-  //           ...props,
-  //         },
-  //       },
-  //     },
-  //   },
-  // });
-  return await client.subscription.update({
+  return await client.user.update({
     where: {
-      userId: (await client.user.findUnique({ where: { clerkId } }))?.id,
+      clerkId,
     },
-    data: props,
+    data: {
+      subscription: {
+        update: {
+          data: {
+            ...props,
+          },
+        },
+      },
+    },
   });
 };
