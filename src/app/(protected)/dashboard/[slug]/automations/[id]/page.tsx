@@ -3,6 +3,7 @@ import PostNode from "@/components/global/automations/posts/node";
 import ThenNode from "@/components/global/automations/then/node";
 import Trigger from "@/components/global/automations/trigger";
 import AutomationBreadCrumb from "@/components/global/bread-crumbs/automation-bread-crumb";
+import Sidebar from "@/components/global/sidebar";
 import { Warning } from "@/icons";
 import { client } from "@/lib/prisma";
 import { PrefetchUserAutomation } from "@/react-query/prefetch";
@@ -42,7 +43,7 @@ const Page = async ({ params }: Props) => {
           <Trigger id={id} />
         </div>
         <ThenNode id={id} />
-        <PostNode id={id}/>
+        <PostNode id={id} />
       </div>
     </HydrationBoundary>
   );

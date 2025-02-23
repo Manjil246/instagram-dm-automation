@@ -22,7 +22,7 @@ const ActivateAutomationButton = ({ id }: Props) => {
     <Button
       onClick={() => mutate({ state: !data?.data?.active })}
       disabled={isPending}
-      className="lg:px-10 bg-gradient-to-br hover:opacity-80 text-white rounded-full from-[#3352cc] font-medium to-[#1c2d70 ml-4"
+      className="lg:px-10 bg-gradient-to-br hover:opacity-80 text-white rounded-full from-[#3352cc] font-medium to-[#1c2d70] ml-4"
     >
       {isPending ? <Loader2 className="animate-spin" /> : <ActiveAutomation />}
 

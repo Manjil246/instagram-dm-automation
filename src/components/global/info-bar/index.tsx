@@ -15,6 +15,7 @@ import CreateAutomation from "../create-automation";
 import Search from "./search";
 import Notifications from "./notifications";
 import MainBreadCrum from "../bread-crumbs/main-bread-crum";
+import Sidebar from "../sidebar";
 
 type Props = {
   slug: string;
